@@ -12,6 +12,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.myapplicationfragmentsnav.Roomdbdirectery.TaskDatabase
+import com.example.myapplicationfragmentsnav.Roomdbdirectery.TaskItem
+import com.example.myapplicationfragmentsnav.adapter.TaskAdopter
 import com.example.myapplicationfragmentsnav.databinding.FragmentListofNoteBinding
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +31,7 @@ private const val ARG_PARAM2 = "param2"
  * Use the [ListofNoteFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class ListofNoteFragment : BaseFragment() {
+class ListofNoteFragment : BaseFragment(), TaskAdopter.Deletetask {
     private lateinit var listofNoteBinding: FragmentListofNoteBinding
     private val binding get() = listofNoteBinding
     private lateinit var viewModel: ListofNoteViewModel
@@ -50,9 +52,8 @@ class ListofNoteFragment : BaseFragment() {
                 LinearLayoutManager(context?.applicationContext, RecyclerView.VERTICAL, true)
             this.setHasFixedSize(true)
         }
-
-
-
+        // coroutine implementation
+        getdatafrombd()
 
         binding.febAdd.setOnClickListener {
             findNavController().navigate(R.id.action_mobile_navigation_to_addNoteFragment)
@@ -66,16 +67,15 @@ class ListofNoteFragment : BaseFragment() {
 
         GlobalScope.launch {
 
-
             withContext(Dispatchers.Main) {
                 context?.let {
                     if (TaskDatabase(it).TaskDao().getAllTask().isNotEmpty()) {
 
-                       // binding.recycleview.adapter = TaskAdopter(
-                       //     requireContext(),
-                       //     TaskDatabase(it).TaskDao().getAllTask(),
-                       //     this@ListofNoteFragment
-                        //)
+                        binding.recycleview.adapter = TaskAdopter(
+                            requireContext(),
+                            TaskDatabase(it).TaskDao().getAllTask(),
+                            this@ListofNoteFragment
+                       )
                         Log.e("TAG", "onViewCreated: " + TaskDatabase(requireContext()).TaskDao().getAllTask())
 
                     }
@@ -87,4 +87,18 @@ class ListofNoteFragment : BaseFragment() {
 
         binding.recycleview.adapter?.notifyDataSetChanged()
     }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    override fun deletitem(taskItem: TaskItem) {
+
+        GlobalScope.launch {
+            TaskDatabase(requireContext()).TaskDao().deletitem(taskItem)
+        }
+        getdatafrombd()
+        requireContext().toast("Data Deleted Successfully")
+    }
+
+    companion object
+
+
 }
